@@ -234,16 +234,8 @@ public class CommandListener implements Listener {
                 int itemVariation = testItem.getVariation();
                 int itemID = testItem.getTypeID();
                 String itemName = testItem.getName();
-                try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "'")) {
-                    if (result.next()) {
-                    plugin.getWorldDatabase().execute("UPDATE Pricelist SET ItemPrice='" + itemPrice + "' WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "'");
-                    } else {
-                    plugin.getWorldDatabase().execute("INSERT INTO Pricelist (ItemID, ItemVariation, ItemName, ItemPrice) VALUES ( '" + itemID + "', '" + itemVariation + "','" + itemName + "','" + itemPrice + "')");
-                    }
-                    player.sendTextMessage("[#00FF00]Set " + itemName + " " + itemPrice + " Coins");
-                } catch (SQLException e) {
-                    System.out.println("Error accessing database");
-                }               
+                plugin.getWorldDatabase().executeUpdate("REPLACE INTO Pricelist (ItemID, ItemVariation, ItemName, ItemPrice) VALUES ( '" + itemID + "', '" + itemVariation + "','" + itemName + "','" + itemPrice + "')");
+                player.sendTextMessage("[#00FF00]Set " + itemName + " " + itemPrice + " Coins");             
             }
         }
     }

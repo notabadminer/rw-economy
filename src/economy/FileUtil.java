@@ -75,15 +75,8 @@ public class FileUtil {
                 int itemVariation = Integer.parseInt(temp[1]);
                 String itemName = temp[2];
                 int itemPrice = Integer.parseInt(temp[3]);
-                try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "'")) {
-                    if (result.next()) {
-                    plugin.getWorldDatabase().execute("UPDATE Pricelist SET ItemPrice='" + itemPrice + "' WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "'");
-                    } else {
-                    plugin.getWorldDatabase().execute("INSERT INTO Pricelist (ItemID, ItemVariation, ItemName, ItemPrice) VALUES ( '" + itemID + "', '" + itemVariation + "','" + itemName + "','" + itemPrice + "')");
-                    }  
-                } catch (SQLException e) {
-                    System.out.println("Error accessing database");
-                }               
+                System.out.println("Inserting " + itemName);
+                plugin.getWorldDatabase().executeUpdate("REPLACE INTO Pricelist (ItemID, ItemVariation, ItemName, ItemPrice) VALUES ( '" + itemID + "', '" + itemVariation + "','" + itemName + "','" + itemPrice + "')");
             }
         } catch (IOException e) {
             System.out.println("Error reading from pricelist.csv");
