@@ -75,7 +75,6 @@ public class FileUtil {
                 int itemVariation = Integer.parseInt(temp[1]);
                 String itemName = temp[2];
                 int itemPrice = Integer.parseInt(temp[3]);
-                System.out.println("Inserting " + itemName);
                 plugin.getWorldDatabase().executeUpdate("REPLACE INTO Pricelist (ItemID, ItemVariation, ItemName, ItemPrice) VALUES ( '" + itemID + "', '" + itemVariation + "','" + itemName + "','" + itemPrice + "')");
             }
         } catch (IOException e) {

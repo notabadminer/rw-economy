@@ -33,7 +33,7 @@ public class Economy extends Plugin {
         //create our database table if it doesn't exist
         WorldDatabase database = getWorldDatabase();
         database.execute("CREATE TABLE IF NOT EXISTS `Economy` (`ID` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `PlayerName` VARCHAR(32), `Balance` BIGINT);");
-        database.execute("CREATE TABLE IF NOT EXISTS `Pricelist` (`ItemID` INT, `ItemVariation` INT, `ItemName` VARCHAR(32), `ItemPrice` INT);");
+        database.execute("CREATE TABLE IF NOT EXISTS Pricelist (`ItemID` INT, `ItemVariation` INT, `ItemName` VARCHAR(32), `ItemPrice` INT,  UNIQUE(ItemID, ItemVariation) ON CONFLICT REPLACE)");
     }
 
     @Override
