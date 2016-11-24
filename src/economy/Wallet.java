@@ -41,15 +41,14 @@ public class Wallet implements IWallet {
             if (balance >= amount) {
                 balance -= amount;
                 if (!simulate) {
-                                    database.execute("UPDATE Economy SET balance='" + balance + "' WHERE PlayerName='" + playername + "'");
+                    database.execute("UPDATE Economy SET balance='" + balance + "' WHERE PlayerName='" + playername + "'");
                 }
                 return true;
             }
-            
         } catch (SQLException e) {
             return false;
         }
-          return false; 
+        return false; 
     }
 
     @Override
@@ -58,7 +57,7 @@ public class Wallet implements IWallet {
 
         try (ResultSet result = database.executeQuery("SELECT Balance FROM Economy WHERE PlayerName='" + playername + "'")) {
             long balance = result.getLong("Balance");
-            if (balance + amount <= Long.MAX_VALUE) {
+            if (Long.MAX_VALUE - balance >= amount) {
                 balance += amount;
                 if (!simulate) {
                     database.execute("UPDATE Economy SET balance='" + balance + "' WHERE PlayerName='" + playername + "'");
@@ -68,7 +67,7 @@ public class Wallet implements IWallet {
         } catch (SQLException e) {
             return false;
         }
-          return false;      
+        return false;      
     }
 
     @Override
@@ -78,8 +77,7 @@ public class Wallet implements IWallet {
         try (ResultSet result = database.executeQuery("SELECT Balance FROM Economy WHERE PlayerName='" + playername + "'")) {
             return result.getLong("Balance");
         } catch (SQLException e) {
-            return -1;
+            return 0;
         }
     }
-    
 }

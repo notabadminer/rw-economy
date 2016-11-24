@@ -22,8 +22,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -38,14 +41,15 @@ public class FileUtil {
 
     public void exportPriceData() {
 
-        try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemID, ItemVariation, ItemName, ItemPrice FROM Pricelist")) {
+        try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemID, ItemVariation, ItemAttribute, ItemName, ItemPrice FROM Pricelist")) {
             FileWriter fstream = null;
-            fstream = new FileWriter(new File("pricelist.csv"));
+            fstream = new FileWriter(new File("plugins/Economy/pricelist.csv"));
             BufferedWriter out = new BufferedWriter(fstream);
             while (result.next()) {
-                out.write(Integer.toString(result.getInt("ItemID")) + ", ");
-                out.write(Integer.toString(result.getInt("ItemVariation")) + ", ");
-                out.write(result.getString("ItemName") + ", ");
+                out.write(Integer.toString(result.getInt("ItemID")) + ",");
+                out.write(Integer.toString(result.getInt("ItemVariation")) + ",");
+                out.write(result.getString("ItemAttribute") + ",");
+                out.write(result.getString("ItemName") + ",");
                 out.write(result.getString("ItemPrice"));
                 out.newLine();
             }
@@ -59,11 +63,31 @@ public class FileUtil {
     }
 
     public void importPriceData() {
-        String csvFile = "pricelist.csv";
-        String line = "";
-
-        try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
-            int lineNumber = 0;
+        String csvFile = "plugins/Economy/pricelist.csv";
+        
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(csvFile));
+            readCSV(br);
+        } catch (IOException e) {
+            System.out.println("Error reading from pricelist.csv");
+        }
+    }
+    
+     public void initializePriceData() {
+        String csvFile = "/resources/assets/pricelist.csv";
+        
+        try {
+            InputStreamReader isr = new InputStreamReader(getClass().getResourceAsStream(csvFile));
+            BufferedReader br = new BufferedReader(isr);
+            readCSV(br);
+        } catch (IOException e) {
+            System.out.println("Error reading from pricelist.csv");
+        }
+     }
+     
+     private void readCSV(BufferedReader br) throws IOException {
+         String line = "";
+         int lineNumber = 0;
             while ((line = br.readLine()) != null) {
                 lineNumber++;
                 String[] temp = line.split(",");
@@ -73,14 +97,10 @@ public class FileUtil {
                 }
                 int itemID = Integer.parseInt(temp[0]);
                 int itemVariation = Integer.parseInt(temp[1]);
-                String itemName = temp[2];
-                int itemPrice = Integer.parseInt(temp[3]);
-                plugin.getWorldDatabase().executeUpdate("REPLACE INTO Pricelist (ItemID, ItemVariation, ItemName, ItemPrice) VALUES ( '" + itemID + "', '" + itemVariation + "','" + itemName + "','" + itemPrice + "')");
+                String itemAttribute = temp[2];
+                String itemName = temp[3];
+                int itemPrice = Integer.parseInt(temp[4]);
+                plugin.getWorldDatabase().executeUpdate("REPLACE INTO Pricelist (ItemID, ItemVariation, ItemAttribute, ItemName, ItemPrice) VALUES ('" + itemID + "', '" + itemVariation + "','" + itemAttribute + "','" + itemName + "','" + itemPrice + "')");
             }
-        } catch (IOException e) {
-            System.out.println("Error reading from pricelist.csv");
-        }
-
-    }
-
+     }
 }

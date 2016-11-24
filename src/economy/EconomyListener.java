@@ -18,6 +18,7 @@ package economy;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import net.risingworld.api.database.WorldDatabase;
 import net.risingworld.api.events.EventMethod;
 import net.risingworld.api.events.Listener;
 import net.risingworld.api.events.player.PlayerCommandEvent;
@@ -29,12 +30,27 @@ import net.risingworld.api.objects.Player;
  *
  * @author notabadminer
  */
-public class CommandListener implements Listener {
+public class EconomyListener implements Listener {
 
     private final Economy plugin;
 
-    public CommandListener(Economy plugin) {
+    public EconomyListener(Economy plugin) {
         this.plugin = plugin;
+    }
+    
+    @EventMethod
+    public void PlayerConnectEvent(Player player, boolean newPlayer) {
+        WorldDatabase database = plugin.getWorldDatabase();
+        String playername = player.getName();
+        System.out.println("Player " + playername + " logged in");
+
+        if (newPlayer) {
+            try {
+                database.executeQuery("INSERT INTO Economy (PlayerName, Balance) VALUES ('" + playername + "',0); END");
+            } catch (SQLException ex) {
+                System.out.println("Error adding player to Economy table");
+            }
+        }
     }
 
     @EventMethod
@@ -61,9 +77,9 @@ public class CommandListener implements Listener {
                 }
                 if (plugin.wallet.creditAccount(playername, amount, true)) {
                     plugin.wallet.creditAccount(playername, amount, false);
-                    player.sendTextMessage("[#FF0000]Gave " + playername + " " +  amount + " Coins");
+                    player.sendTextMessage("[#00FF00]Gave " + playername + " " +  amount + " Coins");
                 } else {
-                    player.sendTextMessage("[#00FF00]Command failed");
+                    player.sendTextMessage("[#FF0000]Command failed");
                 }
             } else {
                 player.sendTextMessage("[#FF0000]Command usage: /givecoins <playername> <amount>");
@@ -82,8 +98,9 @@ public class CommandListener implements Listener {
             } else {
                 int itemVariation = testItem.getVariation();
                 int itemID = testItem.getTypeID();
+                String itemAttribute = getItemAttribute(testItem.toString());
                 String itemName = testItem.getName();
-                try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "'")) {
+                try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "' AND ItemAttribute='" + itemAttribute + "'")) {
                     int itemPrice = result.getInt("ItemPrice");
                     if (itemPrice > 0) {
                         player.sendTextMessage("[#00FF00]" + itemName + " is " + itemPrice + " Coins.");
@@ -109,6 +126,7 @@ public class CommandListener implements Listener {
                 int amount = testItem.getStacksize();
                 int itemVariation = testItem.getVariation();
                 int itemID = testItem.getTypeID();
+                String itemAttribute = getItemAttribute(testItem.toString());
                 int stackValue = 0;
                 String[] args = command.split(" ");
                 if (args.length > 1) {
@@ -119,7 +137,7 @@ public class CommandListener implements Listener {
                         return;
                     }
                 }
-                try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "'")) {
+                try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "' AND ItemAttribute='" + itemAttribute + "'")) {
                     int itemPrice = result.getInt("ItemPrice");
                     if (itemPrice > 0) {
                         stackValue = amount * itemPrice;
@@ -153,6 +171,7 @@ public class CommandListener implements Listener {
                 int itemVariation = testItem.getVariation();
                 short itemID = testItem.getTypeID();
                 String itemName = testItem.getName();
+                String itemAttribute = getItemAttribute(testItem.toString());
                 String[] args = command.split(" ");
                 if (args.length > 1) {
                     try {
@@ -162,7 +181,7 @@ public class CommandListener implements Listener {
                         return;
                     }
                 }
-                 try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "'")) {
+                 try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "' AND ItemAttribute='" + itemAttribute + "'")) {
                     int itemPrice = result.getInt("ItemPrice");
                     if (itemPrice > 0) {
                         if (plugin.wallet.debitAccount(playername, amount * itemPrice, true)) {
@@ -188,13 +207,13 @@ public class CommandListener implements Listener {
             String itemName = "";
             while (itemID <= 300) {
                 player.getInventory().insertNewItem(itemID, 0, 1, 0, Inventory.SlotType.Inventory);
-                System.out.println("Item: " + player.getInventory().getItem(0, Inventory.SlotType.Inventory).toString());
-                String test = player.getInventory().getItem(0, Inventory.SlotType.Inventory).toString();
-                if (test.split(",")[1].contentEquals(" name: null")) {
+                String testItem = player.getInventory().getItem(0, Inventory.SlotType.Inventory).toString();
+                String itemAttribute = getItemAttribute(testItem);
+                if (testItem.split(",")[1].contentEquals(" name: null")) {
                     player.getInventory().removeItem(0, Inventory.SlotType.Inventory);
                 } else {
                     itemName = player.getInventory().getItem(0, Inventory.SlotType.Inventory).getName();
-                    plugin.getWorldDatabase().execute("INSERT INTO Pricelist (ItemID, ItemVariation, ItemName, ItemPrice) VALUES ( '" + itemID + "', 0,'" + itemName + "', -1)");
+                    plugin.getWorldDatabase().execute("REPLACE INTO Pricelist (ItemID, ItemVariation, ItemAttribute, ItemName, ItemPrice) VALUES ( '" + itemID + "', 0, NULL,'" + itemName + "', -1)");
                 }
                 itemID++;
             }
@@ -228,15 +247,22 @@ public class CommandListener implements Listener {
                 return;
             }
             String test = testItem.toString();
+            String itemAttribute = getItemAttribute(testItem.toString());
             if (test.split(",")[1].contentEquals(" name: null")) {
                 player.sendTextMessage("[#FF0000]No item in hand.");
             } else {
                 int itemVariation = testItem.getVariation();
                 int itemID = testItem.getTypeID();
                 String itemName = testItem.getName();
-                plugin.getWorldDatabase().executeUpdate("REPLACE INTO Pricelist (ItemID, ItemVariation, ItemName, ItemPrice) VALUES ( '" + itemID + "', '" + itemVariation + "','" + itemName + "','" + itemPrice + "')");
+                plugin.getWorldDatabase().executeUpdate("REPLACE INTO Pricelist (ItemID, ItemVariation, ItemAttribute, ItemName, ItemPrice) VALUES ( '" + itemID + "', '" + itemVariation + "','" + itemAttribute + "','" + itemName + "','" + itemPrice + "')");
                 player.sendTextMessage("[#00FF00]Set " + itemName + " " + itemPrice + " Coins");             
             }
         }
+    }
+    
+    private String getItemAttribute(String itemString) {
+        String tempString = itemString.split("ute: ")[1];
+        String attribute = tempString.split(",")[0];
+        return attribute;
     }
 }
