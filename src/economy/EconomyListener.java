@@ -22,6 +22,7 @@ import net.risingworld.api.database.WorldDatabase;
 import net.risingworld.api.events.EventMethod;
 import net.risingworld.api.events.Listener;
 import net.risingworld.api.events.player.PlayerCommandEvent;
+import net.risingworld.api.events.player.PlayerConnectEvent;
 import net.risingworld.api.objects.Inventory;
 import net.risingworld.api.objects.Item;
 import net.risingworld.api.objects.Player;
@@ -39,12 +40,11 @@ public class EconomyListener implements Listener {
     }
     
     @EventMethod
-    public void PlayerConnectEvent(Player player, boolean newPlayer) {
+    public void onPlayerConnect(PlayerConnectEvent event) {
         WorldDatabase database = plugin.getWorldDatabase();
-        String playername = player.getName();
-        System.out.println("Player " + playername + " logged in");
+        String playername = event.getPlayer().getName();
 
-        if (newPlayer) {
+        if (event.isNewPlayer()) {
             try {
                 database.executeQuery("INSERT INTO Economy (PlayerName, Balance) VALUES ('" + playername + "',0); END");
             } catch (SQLException ex) {
@@ -64,7 +64,7 @@ public class EconomyListener implements Listener {
             player.sendTextMessage("[#00FF00]Balance: " + balance + " Coins.");
         }
 
-        if (command.startsWith("/givecoins")) {
+        if (command.startsWith("/givecoins") && player.isAdmin()) {
             String args[] = command.split(" ");
 
             if (args.length == 3) {
@@ -163,6 +163,11 @@ public class EconomyListener implements Listener {
                 player.sendTextMessage("[#FF0000]No item in hand.");
                 return;
             }
+            //we can't handle buying objects due to the attribute not being accessible
+            if (testItem.getName().matches("objectkit")) {
+                player.sendTextMessage("[#FF0000]This item cannot be bought");
+                return;
+            }
                 String test = testItem.toString();
             if (test.split(",")[1].contentEquals(" name: null")) {
                 player.sendTextMessage("[#FF0000]No item in hand.");
@@ -185,9 +190,14 @@ public class EconomyListener implements Listener {
                     int itemPrice = result.getInt("ItemPrice");
                     if (itemPrice > 0) {
                         if (plugin.wallet.debitAccount(playername, amount * itemPrice, true)) {
+                            if (testItem.getStacksize() < testItem.getMaxStacksize()) {
+                                amount = Math.min(testItem.getMaxStacksize() - testItem.getStacksize(), amount);
+                                player.sendTextMessage("[#FF0000]Modified amount: " + amount);
+                            }
+                            amount = Math.min(amount, testItem.getMaxStacksize());
                             Item invAdd = player.getInventory().insertNewItem(itemID, itemVariation, amount);
-                            player.sendTextMessage("[#00FF00]Bought " + invAdd.getStacksize() + " " + invAdd.getName());
-                            plugin.wallet.debitAccount(playername, invAdd.getStacksize() * itemPrice, false);
+                            player.sendTextMessage("[#00FF00]Bought " + amount + " " + invAdd.getName());
+                            plugin.wallet.debitAccount(playername, amount * itemPrice, false);
                     } else {
                             player.sendTextMessage("[#FF0000]Not enough coins");
                         }
@@ -202,33 +212,15 @@ public class EconomyListener implements Listener {
             }
          }
 
-        if (command.equals("/economy generate")) {
-            short itemID = 1;
-            String itemName = "";
-            while (itemID <= 300) {
-                player.getInventory().insertNewItem(itemID, 0, 1, 0, Inventory.SlotType.Inventory);
-                String testItem = player.getInventory().getItem(0, Inventory.SlotType.Inventory).toString();
-                String itemAttribute = getItemAttribute(testItem);
-                if (testItem.split(",")[1].contentEquals(" name: null")) {
-                    player.getInventory().removeItem(0, Inventory.SlotType.Inventory);
-                } else {
-                    itemName = player.getInventory().getItem(0, Inventory.SlotType.Inventory).getName();
-                    plugin.getWorldDatabase().execute("REPLACE INTO Pricelist (ItemID, ItemVariation, ItemAttribute, ItemName, ItemPrice) VALUES ( '" + itemID + "', 0, NULL,'" + itemName + "', -1)");
-                }
-                itemID++;
-            }
-
-        }
-
-        if (command.equals("/economy import")) {
+        if (command.equals("/economy import") && player.isAdmin()) {
             plugin.fileutil.importPriceData();
         }
 
-        if (command.equals("/economy export")) {
+        if (command.equals("/economy export") && player.isAdmin()) {
             plugin.fileutil.exportPriceData();
         }
         
-        if (command.startsWith("/economy set")) {
+        if (command.startsWith("/economy set") && player.isAdmin()) {
             String[] args = command.split(" ");
             int itemPrice = 0;
             if (args.length > 2) {

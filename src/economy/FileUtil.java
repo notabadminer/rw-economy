@@ -25,8 +25,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -42,8 +40,10 @@ public class FileUtil {
     public void exportPriceData() {
 
         try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemID, ItemVariation, ItemAttribute, ItemName, ItemPrice FROM Pricelist")) {
-            FileWriter fstream = null;
-            fstream = new FileWriter(new File("plugins/Economy/pricelist.csv"));
+            File csvFile = new File("plugins/Economy/pricelist.csv");
+            if (csvFile.exists()) csvFile.delete();
+            FileWriter fstream = new FileWriter(csvFile);
+            
             BufferedWriter out = new BufferedWriter(fstream);
             while (result.next()) {
                 out.write(Integer.toString(result.getInt("ItemID")) + ",");
