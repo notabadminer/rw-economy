@@ -35,9 +35,9 @@ public class Economy extends Plugin {
         //create our database table if it doesn't exist
         WorldDatabase database = getWorldDatabase();
         database.execute("CREATE TABLE IF NOT EXISTS `Economy` (`ID` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `PlayerName` VARCHAR(32), `Balance` BIGINT);");
-        database.execute("CREATE TABLE IF NOT EXISTS Pricelist (`ItemID` INT, `ItemVariation` INT, `ItemAttribute` VARCHAR(32), `ItemName` VARCHAR(32), `ItemPrice` INT,  UNIQUE(ItemID, ItemVariation, ItemAttribute) ON CONFLICT REPLACE)");
+        database.execute("CREATE TABLE IF NOT EXISTS `Pricelist` (`ItemID` INT, `ItemVariation` INT, `ItemAttribute` VARCHAR(32), `ItemName` VARCHAR(32), `ItemPrice` INT, UNIQUE(ItemID, ItemVariation, ItemAttribute) ON CONFLICT REPLACE)");
         
-        SQLThread sqlThread = new SQLThread();
+        SQLPricelistUpdateThread sqlThread = new SQLPricelistUpdateThread();
         Thread sql_update = new Thread(sqlThread);
         sql_update.start();
     }
@@ -47,25 +47,25 @@ public class Economy extends Plugin {
         System.out.println("Disabling Economy");
     }
     
-    public class SQLThread implements Runnable { 
+    private class SQLPricelistUpdateThread implements Runnable { 
         //This method will be executed when this thread is executed
+        @Override
         public void run() {
             //sleep a bit to allow database update
-        try {
-           Thread.sleep (1000);
-        } catch (InterruptedException ie) {
-        }
-        
-        //check table pricelist. update if neccessary
-        try (ResultSet result = getWorldDatabase().executeQuery("SELECT * FROM Pricelist")) {
-            if (!result.next()) {
-                System.out.println("Pricelist table is empty. Initializing...");
-                fileutil.initializePriceData();
+            try {
+               Thread.sleep (1000);
+            } catch (InterruptedException e) {
             }
-        } catch (SQLException e) {
-            System.out.println("Error initializing Pricelist table");
-        }
-            
+
+            //check table pricelist. update if neccessary
+            try (ResultSet result = getWorldDatabase().executeQuery("SELECT * FROM Pricelist")) {
+                if (!result.next()) {
+                    System.out.println("Pricelist table is empty. Initializing...");
+                    fileutil.initializePriceData();
+                }
+            } catch (SQLException e) {
+                System.out.println("Error initializing Pricelist table");
+            }
         }
     }
 }

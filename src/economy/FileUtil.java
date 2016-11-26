@@ -39,7 +39,7 @@ public class FileUtil {
 
     public void exportPriceData() {
 
-        try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemID, ItemVariation, ItemAttribute, ItemName, ItemPrice FROM Pricelist")) {
+        try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemID, ItemVariation, ItemAttribute, ItemName, ItemPrice FROM `Pricelist`")) {
             File csvFile = new File("plugins/Economy/pricelist.csv");
             if (csvFile.exists()) csvFile.delete();
             FileWriter fstream = new FileWriter(csvFile);
@@ -80,8 +80,15 @@ public class FileUtil {
             InputStreamReader isr = new InputStreamReader(getClass().getResourceAsStream(csvFile));
             BufferedReader br = new BufferedReader(isr);
             readCSV(br);
-        } catch (IOException e) {
-            System.out.println("Error reading from pricelist.csv");
+        } catch (IOException | NullPointerException e) {
+            System.out.println("Cannot read pricelist.csv from jar. Attempting to read from filesystem");
+            try {
+                csvFile = "plugins/Economy/pricelist.csv";
+                BufferedReader br = new BufferedReader(new FileReader(csvFile));
+                readCSV(br);
+            } catch (IOException e2) {
+                System.out.println("Error reading from plugins/Economy/pricelist.csv");
+            }
         }
      }
      
@@ -100,7 +107,7 @@ public class FileUtil {
                 String itemAttribute = temp[2];
                 String itemName = temp[3];
                 int itemPrice = Integer.parseInt(temp[4]);
-                plugin.getWorldDatabase().executeUpdate("REPLACE INTO Pricelist (ItemID, ItemVariation, ItemAttribute, ItemName, ItemPrice) VALUES ('" + itemID + "', '" + itemVariation + "','" + itemAttribute + "','" + itemName + "','" + itemPrice + "')");
+                plugin.getWorldDatabase().executeUpdate("REPLACE INTO `Pricelist` (ItemID, ItemVariation, ItemAttribute, ItemName, ItemPrice) VALUES ('" + itemID + "', '" + itemVariation + "','" + itemAttribute + "','" + itemName + "','" + itemPrice + "')");
             }
      }
 }

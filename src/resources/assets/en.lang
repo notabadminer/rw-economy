@@ -1,0 +1,27 @@
+# commands
+command.balance.name=/balance
+command.price.name=/price
+command.givecoins.name=/givecoins
+command.sell.name=/sell
+command.buy.name=/buy
+command.economy.import.name=/economy import
+command.economy.export.name=/economy export
+command.economy.set.name=/economy set
+command.economy.set.help=Command usage: /economy set <price>
+command.givecoins.help=Command usage: /givecoins <playername> <amount>
+
+# messages
+economy.error.noprice=has no price
+economy.error.emptyhand=No item in hand
+economy.message.balance=Balance: 
+economy.error.invalid=Invalid amount!
+economy.message.gave=Gave 
+economy.message.sold=Sold 
+economy.message.bought=Bought 
+economy.error.notfound=Player not found!
+economy.error.command=Command failed!
+economy.error.objectkit=This item cannot be bought
+economy.error.notenough=You do not have enough coins!
+
+#general
+economy.label.coin=Coins

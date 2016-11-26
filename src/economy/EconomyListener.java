@@ -45,11 +45,8 @@ public class EconomyListener implements Listener {
         String playername = event.getPlayer().getName();
 
         if (event.isNewPlayer()) {
-            try {
-                database.executeQuery("INSERT INTO Economy (PlayerName, Balance) VALUES ('" + playername + "',0); END");
-            } catch (SQLException ex) {
-                System.out.println("Error adding player to Economy table");
-            }
+                System.out.println("New player: adding to Economy table");
+                database.executeUpdate("INSERT INTO Economy (PlayerName, Balance) VALUES ('" + playername + "',0)");
         }
     }
 
@@ -58,13 +55,14 @@ public class EconomyListener implements Listener {
         Player player = event.getPlayer();
         String command = event.getCommand();
         String playername = player.getName();
+        String lang = player.getLanguage();
 
-        if (command.equals("/balance")) {
+        if (command.equals(LangSupport.getLocalTranslation("command.balance.name", lang))) {
             long balance = plugin.wallet.accountBalance(playername);
-            player.sendTextMessage("[#00FF00]Balance: " + balance + " Coins.");
+            player.sendTextMessage("[#00FF00]" + LangSupport.getLocalTranslation("economy.message.balance", lang) + balance + " "  + LangSupport.getLocalTranslation("economy.label.coin", lang));
         }
 
-        if (command.startsWith("/givecoins") && player.isAdmin()) {
+        if (command.startsWith(LangSupport.getLocalTranslation("command.givecoins.name", lang)) && player.isAdmin()) {
             String args[] = command.split(" ");
 
             if (args.length == 3) {
@@ -72,29 +70,33 @@ public class EconomyListener implements Listener {
                 try {
                     amount = Long.parseLong(args[2]);
                 } catch (NumberFormatException e) {
-                    player.sendTextMessage("[#FF0000]Invalid amount!");
+                    player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.invalid", lang));
                     return;
                 }
-                if (plugin.wallet.creditAccount(playername, amount, true)) {
-                    plugin.wallet.creditAccount(playername, amount, false);
-                    player.sendTextMessage("[#00FF00]Gave " + playername + " " +  amount + " Coins");
+                if (plugin.getServer().getPlayer(args[1]) == null) {
+                    player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.notfound", lang));
+                    return;
+                }
+                if (plugin.wallet.creditAccount(args[1], amount, true)) {
+                    plugin.wallet.creditAccount(args[1], amount, false);
+                    player.sendTextMessage("[#00FF00]" + LangSupport.getLocalTranslation("economy.message.gave", lang) + args[1] + " " +  amount + " "  + LangSupport.getLocalTranslation("economy.label.coin", lang));
                 } else {
-                    player.sendTextMessage("[#FF0000]Command failed");
+                    player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.command", lang));
                 }
             } else {
-                player.sendTextMessage("[#FF0000]Command usage: /givecoins <playername> <amount>");
+                player.sendTextMessage("[#00FF00]" + LangSupport.getLocalTranslation("command.givecoins.help", lang));
             }
         }
 
-        if (command.equals("/price")) {
+        if (command.equals(LangSupport.getLocalTranslation("command.price.name", lang))) {
             Item testItem = player.getInventory().getItem(player.getInventory().getQuickslotFocus(), Inventory.SlotType.Quickslot);
             if (testItem == null) {
-                player.sendTextMessage("[#FF0000]No item in hand.");
+                player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.emptyhand", lang));
                 return;
             }
             String test = testItem.toString();
             if (test.split(",")[1].contentEquals(" name: null")) {
-                player.sendTextMessage("[#FF0000]No item in hand.");
+                player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.emptyhand", lang));
             } else {
                 int itemVariation = testItem.getVariation();
                 int itemID = testItem.getTypeID();
@@ -103,26 +105,27 @@ public class EconomyListener implements Listener {
                 try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "' AND ItemAttribute='" + itemAttribute + "'")) {
                     int itemPrice = result.getInt("ItemPrice");
                     if (itemPrice > 0) {
-                        player.sendTextMessage("[#00FF00]" + itemName + " is " + itemPrice + " Coins.");
+                        player.sendTextMessage("[#00FF00]" + itemName + ": " + itemPrice + " "  + LangSupport.getLocalTranslation("economy.label.coin", lang));
                     } else {
-                        player.sendTextMessage("[#FF0000]" + itemName + " has no price");
+                        player.sendTextMessage("[#FF0000]" + itemName + " " + LangSupport.getLocalTranslation("economy.error.noprice", lang));
                     }
                 } catch (SQLException e) {
-                    player.sendTextMessage("[#FF0000]SQL Error. Item not found.");
+                    player.sendTextMessage("[#FF0000]" + itemName + " " + LangSupport.getLocalTranslation("economy.error.noprice", lang));
                 }
             }
         }
 
-        if (command.startsWith("/sell")) {
+        if (command.startsWith(LangSupport.getLocalTranslation("command.sell.name", lang))) {
             Item testItem = player.getInventory().getItem(player.getInventory().getQuickslotFocus(), Inventory.SlotType.Quickslot);
             if (testItem == null) {
-                player.sendTextMessage("[#FF0000]No item in hand.");
+                player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.emptyhand", player.getLanguage()));
                 return;
             }
                 String test = testItem.toString();
             if (test.split(",")[1].contentEquals(" name: null")) {
-                player.sendTextMessage("[#FF0000]No item in hand.");
+                player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.emptyhand", player.getLanguage()));
             } else {
+                String itemName = testItem.getName();
                 int amount = testItem.getStacksize();
                 int itemVariation = testItem.getVariation();
                 int itemID = testItem.getTypeID();
@@ -133,7 +136,7 @@ public class EconomyListener implements Listener {
                     try {
                        amount = Math.min(Integer.parseInt(args[1]), testItem.getStacksize());
                     } catch (NumberFormatException e) {
-                        player.sendTextMessage("[#FF0000]Invalid amount!");
+                        player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.invalid", lang));
                         return;
                     }
                 }
@@ -142,35 +145,37 @@ public class EconomyListener implements Listener {
                     if (itemPrice > 0) {
                         stackValue = amount * itemPrice;
                     } else {
-                        player.sendTextMessage("[#FF0000]Item has no price");
+                        player.sendTextMessage("[#FF0000]"+ itemName + " " + LangSupport.getLocalTranslation("economy.error.noprice", lang));
                         return;
                     }
                 } catch (SQLException e) {
-                    player.sendTextMessage("[#FF0000]SQL Error. Item not found.");
+                    player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.notfound", lang));
                     return;
                 }
                 if (plugin.wallet.creditAccount(playername, stackValue, true)) {
                     plugin.wallet.creditAccount(playername, stackValue, false);
                     player.getInventory().removeItem(player.getInventory().getQuickslotFocus(), Inventory.SlotType.Quickslot, amount);
-                    player.sendTextMessage("[#00FF00]Sold " + amount + " " + testItem.getName());
+                    player.sendTextMessage("[#00FF00]" + LangSupport.getLocalTranslation("economy.message.sold", lang) + amount + " " + testItem.getName());
+                } else {
+                    player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.command", lang));
                 }
             }
         }
         
-         if (command.startsWith("/buy")) {
+         if (command.startsWith(LangSupport.getLocalTranslation("command.buy.name", lang))) {
              Item testItem = player.getInventory().getItem(player.getInventory().getQuickslotFocus(), Inventory.SlotType.Quickslot);
             if (testItem == null) {
-                player.sendTextMessage("[#FF0000]No item in hand.");
+                player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.emptyhand", lang));
                 return;
             }
             //we can't handle buying objects due to the attribute not being accessible
             if (testItem.getName().matches("objectkit")) {
-                player.sendTextMessage("[#FF0000]This item cannot be bought");
+                player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.objectkit", lang));
                 return;
             }
                 String test = testItem.toString();
             if (test.split(",")[1].contentEquals(" name: null")) {
-                player.sendTextMessage("[#FF0000]No item in hand.");
+                player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.emptyhand", lang));
             } else {
                 int amount = 1;
                 int itemVariation = testItem.getVariation();
@@ -182,7 +187,7 @@ public class EconomyListener implements Listener {
                     try {
                        amount = Integer.parseInt(args[1]);
                     } catch (NumberFormatException e) {
-                        player.sendTextMessage("[#FF0000]Invalid amount!");
+                        player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.invalid", lang));
                         return;
                     }
                 }
@@ -192,62 +197,61 @@ public class EconomyListener implements Listener {
                         if (plugin.wallet.debitAccount(playername, amount * itemPrice, true)) {
                             if (testItem.getStacksize() < testItem.getMaxStacksize()) {
                                 amount = Math.min(testItem.getMaxStacksize() - testItem.getStacksize(), amount);
-                                player.sendTextMessage("[#FF0000]Modified amount: " + amount);
                             }
                             amount = Math.min(amount, testItem.getMaxStacksize());
                             Item invAdd = player.getInventory().insertNewItem(itemID, itemVariation, amount);
-                            player.sendTextMessage("[#00FF00]Bought " + amount + " " + invAdd.getName());
+                            player.sendTextMessage("[#00FF00]" + LangSupport.getLocalTranslation("economy.message.bought", lang) + amount + " " + invAdd.getName());
                             plugin.wallet.debitAccount(playername, amount * itemPrice, false);
                     } else {
-                            player.sendTextMessage("[#FF0000]Not enough coins");
+                            player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.notenough", lang));
                         }
                     } else {
-                        player.sendTextMessage("[#FF0000]Item has no price");
+                        player.sendTextMessage("[#FF0000]" + itemName + " " + LangSupport.getLocalTranslation("economy.error.noprice", lang));
                         return;
                     }
                 } catch (SQLException e) {
-                    player.sendTextMessage("[#FF0000]SQL Error. Item not found.");
+                    player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.notfound", lang));
                     return;
                 }
             }
          }
 
-        if (command.equals("/economy import") && player.isAdmin()) {
+        if (command.equals(LangSupport.getLocalTranslation("command.economy.import.name", lang)) && player.isAdmin()) {
             plugin.fileutil.importPriceData();
         }
 
-        if (command.equals("/economy export") && player.isAdmin()) {
+        if (command.equals(LangSupport.getLocalTranslation("command.economy.export.name", lang)) && player.isAdmin()) {
             plugin.fileutil.exportPriceData();
         }
         
-        if (command.startsWith("/economy set") && player.isAdmin()) {
+        if (command.startsWith(LangSupport.getLocalTranslation("command.economy.set.name", lang)) && player.isAdmin()) {
             String[] args = command.split(" ");
             int itemPrice = 0;
             if (args.length > 2) {
                 try {
                    itemPrice = Integer.parseInt(args[2]);
                 } catch (NumberFormatException e) {
-                    player.sendTextMessage("[#FF0000]Invalid price!");
+                    player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.invalid", lang));
                     return;
                 }
             } else {
-                player.sendTextMessage("[#FF0000]Command usage: /economy set <price>");
+                player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("command.economy.set.help", lang));
             }
             Item testItem = player.getInventory().getItem(player.getInventory().getQuickslotFocus(), Inventory.SlotType.Quickslot);
             if (testItem == null) {
-                player.sendTextMessage("[#FF0000]No item in hand.");
+                player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.emptyhand", lang));
                 return;
             }
             String test = testItem.toString();
             String itemAttribute = getItemAttribute(testItem.toString());
             if (test.split(",")[1].contentEquals(" name: null")) {
-                player.sendTextMessage("[#FF0000]No item in hand.");
+                player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.emptyhand", lang));
             } else {
                 int itemVariation = testItem.getVariation();
                 int itemID = testItem.getTypeID();
                 String itemName = testItem.getName();
                 plugin.getWorldDatabase().executeUpdate("REPLACE INTO Pricelist (ItemID, ItemVariation, ItemAttribute, ItemName, ItemPrice) VALUES ( '" + itemID + "', '" + itemVariation + "','" + itemAttribute + "','" + itemName + "','" + itemPrice + "')");
-                player.sendTextMessage("[#00FF00]Set " + itemName + " " + itemPrice + " Coins");             
+                player.sendTextMessage("[#00FF00]" + itemName + ": " + itemPrice + " " + LangSupport.getLocalTranslation("economy.label.coin", lang));             
             }
         }
     }
