@@ -18,6 +18,7 @@ package economy;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import net.risingworld.api.database.WorldDatabase;
 import net.risingworld.api.events.EventMethod;
 import net.risingworld.api.events.Listener;
@@ -57,7 +58,8 @@ public class EconomyListener implements Listener {
 
         if (command.equals(LangSupport.getLocalTranslation("command.balance.name", lang))) {
             long balance = plugin.wallet.accountBalance(playername);
-            player.sendTextMessage("[#00FF00]" + LangSupport.getLocalTranslation("economy.message.balance", lang) + balance + " "  + LangSupport.getLocalTranslation("economy.label.coin", lang));
+            DecimalFormat formatter = new DecimalFormat("#,###,###,###,###,###,###");
+            player.sendTextMessage("[#00FF00]" + LangSupport.getLocalTranslation("economy.message.balance", lang) + formatter.format(balance) + " "  + LangSupport.getLocalTranslation("economy.label.coin", lang));
         }
 
         if (command.startsWith(LangSupport.getLocalTranslation("command.givecoins.name", lang)) && player.isAdmin()) {
@@ -138,18 +140,14 @@ public class EconomyListener implements Listener {
                         return;
                     }
                 }
-                try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "' AND ItemAttribute='" + itemAttribute + "'")) {
-                    int itemPrice = result.getInt("ItemPrice");
-                    if (itemPrice > 0) {
-                        stackValue = amount * itemPrice;
-                    } else {
-                        player.sendTextMessage("[#FF0000]"+ itemName + " " + LangSupport.getLocalTranslation("economy.error.noprice", lang));
-                        return;
-                    }
-                } catch (SQLException e) {
-                    player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.notfound", lang));
+                int itemPrice = getItemPrice(itemID, itemVariation, itemAttribute);
+                if (itemPrice > 0) {
+                    stackValue = amount * itemPrice;
+                } else {
+                    player.sendTextMessage("[#FF0000]"+ itemName + " " + LangSupport.getLocalTranslation("economy.error.noprice", lang));
                     return;
                 }
+               
                 if (plugin.wallet.creditAccount(playername, stackValue, true)) {
                     plugin.wallet.creditAccount(playername, stackValue, false);
                     player.getInventory().removeItem(player.getInventory().getQuickslotFocus(), Inventory.SlotType.Quickslot, amount);
@@ -189,26 +187,22 @@ public class EconomyListener implements Listener {
                         return;
                     }
                 }
-                 try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "' AND ItemAttribute='" + itemAttribute + "'")) {
-                    int itemPrice = result.getInt("ItemPrice");
-                    if (itemPrice > 0) {
-                        if (plugin.wallet.debitAccount(playername, amount * itemPrice, true)) {
-                            if (testItem.getStacksize() < testItem.getMaxStacksize()) {
-                                amount = Math.min(testItem.getMaxStacksize() - testItem.getStacksize(), amount);
-                            }
-                            amount = Math.min(amount, testItem.getMaxStacksize());
-                            Item invAdd = player.getInventory().insertNewItem(itemID, itemVariation, amount);
-                            player.sendTextMessage("[#00FF00]" + LangSupport.getLocalTranslation("economy.message.bought", lang) + amount + " " + invAdd.getName());
-                            plugin.wallet.debitAccount(playername, amount * itemPrice, false);
-                    } else {
-                            player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.notenough", lang));
+                
+                int itemPrice = getItemPrice(itemID, itemVariation, itemAttribute);
+                if (itemPrice > 0) {
+                    if (plugin.wallet.debitAccount(playername, amount * itemPrice, true)) {
+                        if (testItem.getStacksize() < testItem.getMaxStacksize()) {
+                            amount = Math.min(testItem.getMaxStacksize() - testItem.getStacksize(), amount);
                         }
-                    } else {
-                        player.sendTextMessage("[#FF0000]" + itemName + " " + LangSupport.getLocalTranslation("economy.error.noprice", lang));
-                        return;
+                        amount = Math.min(amount, testItem.getMaxStacksize());
+                        Item invAdd = player.getInventory().insertNewItem(itemID, itemVariation, amount);
+                        player.sendTextMessage("[#00FF00]" + LangSupport.getLocalTranslation("economy.message.bought", lang) + amount + " " + invAdd.getName());
+                        plugin.wallet.debitAccount(playername, amount * itemPrice, false);
+                } else {
+                        player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.notenough", lang));
                     }
-                } catch (SQLException e) {
-                    player.sendTextMessage("[#FF0000]" + LangSupport.getLocalTranslation("economy.error.notfound", lang));
+                } else {
+                    player.sendTextMessage("[#FF0000]" + itemName + " " + LangSupport.getLocalTranslation("economy.error.noprice", lang));
                     return;
                 }
             }
@@ -258,5 +252,23 @@ public class EconomyListener implements Listener {
         String tempString = itemString.split("ute: ")[1];
         String attribute = tempString.split(",")[0];
         return attribute;
+    }
+    
+    private int getItemPrice(int itemID, int itemVariation, String itemAttribute) {
+        try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "' AND ItemAttribute='" + itemAttribute + "'")) {
+            int itemPrice = result.getInt("ItemPrice");
+            return itemPrice;
+        } catch (SQLException e) {
+            if (itemVariation > 0) {
+                //try variation 0 if specific variation isn't priced
+                try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "' AND ItemAttribute='" + itemAttribute + "'")) {
+                    int itemPrice = result.getInt("ItemPrice");
+                    return itemPrice;
+                } catch (SQLException ex) {
+                    return 0;
+                }
+            }
+            return 0;
+        }
     }
 }

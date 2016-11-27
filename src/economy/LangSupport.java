@@ -34,17 +34,20 @@ public class LangSupport {
         
         try (FileInputStream fis = new FileInputStream("plugins/Economy/" + lang + ".lang")) {
               messages = new PropertyResourceBundle(fis);
+              fis.close();
             } catch (IOException ex) {
                 System.out.println("Cannot find lang from plugins folder");
                 try {
                     InputStreamReader isr = new InputStreamReader(Economy.class.getResourceAsStream("/resources/assets/" + lang + ".lang"));
                     messages = new PropertyResourceBundle(isr);
+                    isr.close();
                 } catch (IOException | NullPointerException e) {
                     System.out.println("Cannot find lang from jar. Using default lang");
                     FileInputStream fis;
                     try {
                         InputStreamReader isr = new InputStreamReader(Economy.class.getResourceAsStream("/resources/assets/en.lang"));
                     messages = new PropertyResourceBundle(isr);
+                    isr.close();
                     } catch (IOException ex1) {
                         System.out.println("Everything is broken in i18n");
                     }
