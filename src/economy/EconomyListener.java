@@ -21,6 +21,7 @@ import java.sql.SQLException;
 import net.risingworld.api.database.WorldDatabase;
 import net.risingworld.api.events.EventMethod;
 import net.risingworld.api.events.Listener;
+import net.risingworld.api.events.Threading;
 import net.risingworld.api.events.player.PlayerCommandEvent;
 import net.risingworld.api.events.player.PlayerConnectEvent;
 import net.risingworld.api.objects.Inventory;
@@ -33,21 +34,18 @@ import net.risingworld.api.objects.Player;
  */
 public class EconomyListener implements Listener {
 
-    private final Economy plugin;
+    private Economy plugin;
 
     public EconomyListener(Economy plugin) {
         this.plugin = plugin;
     }
     
-    @EventMethod
+    @EventMethod(Threading.Sync)
     public void onPlayerConnect(PlayerConnectEvent event) {
         WorldDatabase database = plugin.getWorldDatabase();
         String playername = event.getPlayer().getName();
-
-        if (event.isNewPlayer()) {
-                System.out.println("New player: adding to Economy table");
-                database.executeUpdate("INSERT INTO Economy (PlayerName, Balance) VALUES ('" + playername + "',0)");
-        }
+        
+        database.executeUpdate("IF NOT EXIST (SELECT * FROM Economy WHERE PlayerName='" + playername + "') INSERT INTO `Economy` (`PlayerName`, `Balance`) VALUES ('" + playername + "',0)");
     }
 
     @EventMethod

@@ -26,7 +26,7 @@ import net.risingworld.api.database.WorldDatabase;
  * @author notabadminer
  */
 public class Wallet implements IWallet {
-    private final Economy plugin;
+    private Economy plugin;
 
     public Wallet(Economy plugin) {
         this.plugin = plugin;

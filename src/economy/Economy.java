@@ -29,17 +29,18 @@ public class Economy extends Plugin {
     @Override
     public void onEnable() {
         System.out.println("Enabling Economy");
-        //Register event listener
-        registerEventListener(new EconomyListener(this));
-
+        
         //create our database table if it doesn't exist
         WorldDatabase database = getWorldDatabase();
-        database.execute("CREATE TABLE IF NOT EXISTS `Economy` (`ID` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `PlayerName` VARCHAR(32), `Balance` BIGINT);");
+        database.execute("CREATE TABLE IF NOT EXISTS `Economy` (`PlayerName` VARCHAR(32) PRIMARY KEY UNIQUE, `Balance` BIGINT);");
         database.execute("CREATE TABLE IF NOT EXISTS `Pricelist` (`ItemID` INT, `ItemVariation` INT, `ItemAttribute` VARCHAR(32), `ItemName` VARCHAR(32), `ItemPrice` INT, UNIQUE(ItemID, ItemVariation, ItemAttribute) ON CONFLICT REPLACE)");
         
         SQLPricelistUpdateThread sqlThread = new SQLPricelistUpdateThread();
         Thread sql_update = new Thread(sqlThread);
         sql_update.start();
+        
+        //Register event listener
+        registerEventListener(new EconomyListener(this));
     }
 
     @Override
