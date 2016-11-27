@@ -1,15 +1,3 @@
-# commands
-command.balance.name=/balance
-command.price.name=/price
-command.givecoins.name=/givecoins
-command.sell.name=/sell
-command.buy.name=/buy
-command.economy.import.name=/economy import
-command.economy.export.name=/economy export
-command.economy.set.name=/economy set
-command.economy.set.help=Command usage: /economy set <price>
-command.givecoins.help=Command usage: /givecoins <playername> <amount>
-
 # messages
 economy.error.noprice=has no price
 economy.error.emptyhand=No item in hand

@@ -25,6 +25,7 @@ public class Economy extends Plugin {
     
     protected FileUtil fileutil = new FileUtil(this);
     protected Wallet wallet = new Wallet(this);
+    protected LangSupport i18n = new LangSupport();
 
     @Override
     public void onEnable() {
@@ -41,6 +42,9 @@ public class Economy extends Plugin {
         
         //Register event listener
         registerEventListener(new EconomyListener(this));
+        
+        //load localization
+        i18n.init();
     }
 
     @Override

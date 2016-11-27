@@ -27,32 +27,41 @@ import java.util.ResourceBundle;
  * @author notabadminer
  */
 public class LangSupport {
-
-   static public String getLocalTranslation(String message, String lang) {
- 
-        ResourceBundle messages = null;
-        
-        try (FileInputStream fis = new FileInputStream("plugins/Economy/" + lang + ".lang")) {
-              messages = new PropertyResourceBundle(fis);
+    
+    static ResourceBundle en_messages = null;
+    static ResourceBundle de_messages = null;
+    
+    public void init() {
+        try (FileInputStream fis = new FileInputStream("plugins/Economy/en.lang")) {
+              en_messages = new PropertyResourceBundle(fis);
               fis.close();
             } catch (IOException ex) {
-                System.out.println("Cannot find lang from plugins folder");
                 try {
-                    InputStreamReader isr = new InputStreamReader(Economy.class.getResourceAsStream("/resources/assets/" + lang + ".lang"));
-                    messages = new PropertyResourceBundle(isr);
+                    InputStreamReader isr = new InputStreamReader(Economy.class.getResourceAsStream("/resources/assets/en.lang"));
+                    en_messages = new PropertyResourceBundle(isr);
                     isr.close();
                 } catch (IOException | NullPointerException e) {
-                    System.out.println("Cannot find lang from jar. Using default lang");
-                    FileInputStream fis;
-                    try {
-                        InputStreamReader isr = new InputStreamReader(Economy.class.getResourceAsStream("/resources/assets/en.lang"));
-                    messages = new PropertyResourceBundle(isr);
-                    isr.close();
-                    } catch (IOException ex1) {
-                        System.out.println("Everything is broken in i18n");
-                    }
+                    System.out.println("Loading en.lang failed");
                 }
             }
-        return messages.getString(message);
+        try (FileInputStream fis = new FileInputStream("plugins/Economy/de.lang")) {
+              de_messages = new PropertyResourceBundle(fis);
+              fis.close();
+            } catch (IOException ex) {
+                try {
+                    InputStreamReader isr = new InputStreamReader(Economy.class.getResourceAsStream("/resources/assets/de.lang"));
+                    de_messages = new PropertyResourceBundle(isr);
+                    isr.close();
+                } catch (IOException | NullPointerException e) {
+                    System.out.println("Loading de.lang failed");
+                }
+            }
+    }
+
+   static public String getLocalTranslation(String message, String lang) {
+       if (lang.matches("de")) {
+           return en_messages.getString(message);
+       }
+        return en_messages.getString(message);
     }    
 }
