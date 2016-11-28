@@ -1,0 +1,15 @@
+# messages
+economy.error.noprice=has no price
+economy.error.emptyhand=No item in hand
+economy.message.balance=Balance: 
+economy.error.invalid=Invalid amount!
+economy.message.gave=Gave 
+economy.message.sold=Sold 
+economy.message.bought=Bought 
+economy.error.notfound=Player not found!
+economy.error.command=Command failed!
+economy.error.objectkit=This item cannot be bought
+economy.error.notenough=You do not have enough coins!
+
+#general
+economy.label.coin=Coins

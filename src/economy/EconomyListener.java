@@ -19,7 +19,6 @@ package economy;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
-import net.risingworld.api.database.WorldDatabase;
 import net.risingworld.api.events.EventMethod;
 import net.risingworld.api.events.Listener;
 import net.risingworld.api.events.Threading;
@@ -43,10 +42,11 @@ public class EconomyListener implements Listener {
     
     @EventMethod(Threading.Sync)
     public void onPlayerConnect(PlayerConnectEvent event) {
-        WorldDatabase database = plugin.getWorldDatabase();
         String playername = event.getPlayer().getName();
         
-        database.executeUpdate("IF NOT EXIST (SELECT * FROM Economy WHERE PlayerName='" + playername + "') INSERT INTO `Economy` (`PlayerName`, `Balance`) VALUES ('" + playername + "',0)");
+        if (event.isNewPlayer()) {
+            plugin.database.executeUpdate("INSERT INTO `Economy` (`PlayerName`, `Balance`) VALUES ('" + playername + "',0)");
+        }
     }
 
     @EventMethod
@@ -102,7 +102,7 @@ public class EconomyListener implements Listener {
                 int itemID = testItem.getTypeID();
                 String itemAttribute = getItemAttribute(testItem.toString());
                 String itemName = testItem.getName();
-                try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "' AND ItemAttribute='" + itemAttribute + "'")) {
+                try (ResultSet result = plugin.database.executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "' AND ItemAttribute='" + itemAttribute + "'")) {
                     int itemPrice = result.getInt("ItemPrice");
                     if (itemPrice > 0) {
                         player.sendTextMessage("[#00FF00]" + itemName + ": " + itemPrice + " "  + plugin.i18n.getLocalTranslation("economy.label.coin", lang));
@@ -242,7 +242,7 @@ public class EconomyListener implements Listener {
                 int itemVariation = testItem.getVariation();
                 int itemID = testItem.getTypeID();
                 String itemName = testItem.getName();
-                plugin.getWorldDatabase().executeUpdate("REPLACE INTO Pricelist (ItemID, ItemVariation, ItemAttribute, ItemName, ItemPrice) VALUES ( '" + itemID + "', '" + itemVariation + "','" + itemAttribute + "','" + itemName + "','" + itemPrice + "')");
+                plugin.database.executeUpdate("REPLACE INTO Pricelist (ItemID, ItemVariation, ItemAttribute, ItemName, ItemPrice) VALUES ( '" + itemID + "', '" + itemVariation + "','" + itemAttribute + "','" + itemName + "','" + itemPrice + "')");
                 player.sendTextMessage("[#00FF00]" + itemName + ": " + itemPrice + " " + plugin.i18n.getLocalTranslation("economy.label.coin", lang));             
             }
         }
@@ -255,13 +255,13 @@ public class EconomyListener implements Listener {
     }
     
     private int getItemPrice(int itemID, int itemVariation, String itemAttribute) {
-        try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "' AND ItemAttribute='" + itemAttribute + "'")) {
+        try (ResultSet result = plugin.database.executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "' AND ItemAttribute='" + itemAttribute + "'")) {
             int itemPrice = result.getInt("ItemPrice");
             return itemPrice;
         } catch (SQLException e) {
             if (itemVariation > 0) {
                 //try variation 0 if specific variation isn't priced
-                try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "' AND ItemAttribute='" + itemAttribute + "'")) {
+                try (ResultSet result = plugin.database.executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "' AND ItemAttribute='" + itemAttribute + "'")) {
                     int itemPrice = result.getInt("ItemPrice");
                     return itemPrice;
                 } catch (SQLException ex) {

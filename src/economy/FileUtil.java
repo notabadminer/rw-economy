@@ -39,7 +39,7 @@ public class FileUtil {
 
     public void exportPriceData() {
 
-        try (ResultSet result = plugin.getWorldDatabase().executeQuery("SELECT ItemID, ItemVariation, ItemAttribute, ItemName, ItemPrice FROM `Pricelist`")) {
+        try (ResultSet result = plugin.database.executeQuery("SELECT ItemID, ItemVariation, ItemAttribute, ItemName, ItemPrice FROM `Pricelist`")) {
             File csvFile = new File("plugins/Economy/pricelist.csv");
             if (csvFile.exists()) csvFile.delete();
             FileWriter fstream = new FileWriter(csvFile);
@@ -107,7 +107,7 @@ public class FileUtil {
                 String itemAttribute = temp[2];
                 String itemName = temp[3];
                 int itemPrice = Integer.parseInt(temp[4]);
-                plugin.getWorldDatabase().executeUpdate("REPLACE INTO `Pricelist` (ItemID, ItemVariation, ItemAttribute, ItemName, ItemPrice) VALUES ('" + itemID + "', '" + itemVariation + "','" + itemAttribute + "','" + itemName + "','" + itemPrice + "')");
+                plugin.database.executeUpdate("REPLACE INTO `Pricelist` (ItemID, ItemVariation, ItemAttribute, ItemName, ItemPrice) VALUES ('" + itemID + "', '" + itemVariation + "','" + itemAttribute + "','" + itemName + "','" + itemPrice + "')");
             }
      }
 }

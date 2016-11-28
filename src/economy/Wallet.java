@@ -19,7 +19,6 @@ package economy;
 import economy.api.IWallet;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import net.risingworld.api.database.WorldDatabase;
 
 /**
  *
@@ -34,14 +33,13 @@ public class Wallet implements IWallet {
 
     @Override
     public boolean debitAccount(String playername, long amount, boolean simulate) {
-        WorldDatabase database = plugin.getWorldDatabase();
 
-        try (ResultSet result = database.executeQuery("SELECT Balance FROM Economy WHERE PlayerName='" + playername + "'")) {
+        try (ResultSet result = plugin.database.executeQuery("SELECT Balance FROM Economy WHERE PlayerName='" + playername + "'")) {
             long balance = result.getLong("Balance");
             if (balance >= amount) {
                 balance -= amount;
                 if (!simulate) {
-                    database.execute("UPDATE Economy SET balance='" + balance + "' WHERE PlayerName='" + playername + "'");
+                    plugin.database.execute("UPDATE Economy SET balance='" + balance + "' WHERE PlayerName='" + playername + "'");
                 }
                 return true;
             }
@@ -53,14 +51,13 @@ public class Wallet implements IWallet {
 
     @Override
     public boolean creditAccount(String playername, long amount, boolean simulate) {
-        WorldDatabase database = plugin.getWorldDatabase();
 
-        try (ResultSet result = database.executeQuery("SELECT Balance FROM Economy WHERE PlayerName='" + playername + "'")) {
+        try (ResultSet result = plugin.database.executeQuery("SELECT Balance FROM Economy WHERE PlayerName='" + playername + "'")) {
             long balance = result.getLong("Balance");
             if (Long.MAX_VALUE - balance >= amount) {
                 balance += amount;
                 if (!simulate) {
-                    database.execute("UPDATE Economy SET balance='" + balance + "' WHERE PlayerName='" + playername + "'");
+                    plugin.database.execute("UPDATE Economy SET balance='" + balance + "' WHERE PlayerName='" + playername + "'");
                 }
                 return true;
             }            
@@ -72,9 +69,8 @@ public class Wallet implements IWallet {
 
     @Override
     public long accountBalance(String playername) {
-        WorldDatabase database = plugin.getWorldDatabase();
 
-        try (ResultSet result = database.executeQuery("SELECT Balance FROM Economy WHERE PlayerName='" + playername + "'")) {
+        try (ResultSet result = plugin.database.executeQuery("SELECT Balance FROM Economy WHERE PlayerName='" + playername + "'")) {
             return result.getLong("Balance");
         } catch (SQLException e) {
             return 0;

@@ -19,26 +19,34 @@ package economy;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import net.risingworld.api.Plugin;
-import net.risingworld.api.database.WorldDatabase;
+import net.risingworld.api.database.Database;
 
 public class Economy extends Plugin {
     
     protected FileUtil fileutil = new FileUtil(this);
     protected Wallet wallet = new Wallet(this);
     protected LangSupport i18n = new LangSupport();
+    protected Database database;
 
     @Override
     public void onEnable() {
         System.out.println("Enabling Economy");
+        System.out.println("Database:" + getPath() + "/" + getWorld().getName()+".db");
+        database = getSQLiteConnection(getPath() + "/" + getWorld().getName() + ".db");
         
         //create our database table if it doesn't exist
-        WorldDatabase database = getWorldDatabase();
         database.execute("CREATE TABLE IF NOT EXISTS `Economy` (`PlayerName` VARCHAR(32) PRIMARY KEY UNIQUE, `Balance` BIGINT);");
         database.execute("CREATE TABLE IF NOT EXISTS `Pricelist` (`ItemID` INT, `ItemVariation` INT, `ItemAttribute` VARCHAR(32), `ItemName` VARCHAR(32), `ItemPrice` INT, UNIQUE(ItemID, ItemVariation, ItemAttribute) ON CONFLICT REPLACE)");
-        
-        SQLPricelistUpdateThread sqlThread = new SQLPricelistUpdateThread();
-        Thread sql_update = new Thread(sqlThread);
-        sql_update.start();
+
+        //check table pricelist. update if neccessary
+        try (ResultSet result = database.executeQuery("SELECT * FROM Pricelist")) {
+            if (!result.next()) {
+                System.out.println("Pricelist table is empty. Initializing...");
+                fileutil.initializePriceData();
+            }
+        } catch (SQLException e) {
+            System.out.println("Error initializing Pricelist table");
+        }
         
         //Register event listener
         registerEventListener(new EconomyListener(this));
@@ -50,27 +58,6 @@ public class Economy extends Plugin {
     @Override
     public void onDisable() {
         System.out.println("Disabling Economy");
-    }
-    
-    private class SQLPricelistUpdateThread implements Runnable { 
-        //This method will be executed when this thread is executed
-        @Override
-        public void run() {
-            //sleep a bit to allow database update
-            try {
-               Thread.sleep (1000);
-            } catch (InterruptedException e) {
-            }
-
-            //check table pricelist. update if neccessary
-            try (ResultSet result = getWorldDatabase().executeQuery("SELECT * FROM Pricelist")) {
-                if (!result.next()) {
-                    System.out.println("Pricelist table is empty. Initializing...");
-                    fileutil.initializePriceData();
-                }
-            } catch (SQLException e) {
-                System.out.println("Error initializing Pricelist table");
-            }
-        }
+        database.close();
     }
 }
