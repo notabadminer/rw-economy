@@ -31,7 +31,6 @@ public class Economy extends Plugin {
     @Override
     public void onEnable() {
         System.out.println("Enabling Economy");
-        System.out.println("Database:" + getPath() + "/" + getWorld().getName()+".db");
         database = getSQLiteConnection(getPath() + "/" + getWorld().getName() + ".db");
         
         //create our database table if it doesn't exist

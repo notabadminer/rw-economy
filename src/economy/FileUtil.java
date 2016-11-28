@@ -55,9 +55,7 @@ public class FileUtil {
             }
             System.out.println("Completed writing pricelist");
             out.close();
-        } catch (SQLException e) {
-            System.out.println("SQL Error accessing Items table");
-        } catch (IOException ex) {
+        } catch (SQLException | IOException e) {
             System.out.println("Error writing to pricelist.csv");
         }
     }
@@ -93,7 +91,7 @@ public class FileUtil {
      }
      
      private void readCSV(BufferedReader br) throws IOException {
-         String line = "";
+         String line;
          int lineNumber = 0;
             while ((line = br.readLine()) != null) {
                 lineNumber++;

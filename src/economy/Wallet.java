@@ -25,7 +25,7 @@ import java.sql.SQLException;
  * @author notabadminer
  */
 public class Wallet implements IWallet {
-    private Economy plugin;
+    private final Economy plugin;
 
     public Wallet(Economy plugin) {
         this.plugin = plugin;
