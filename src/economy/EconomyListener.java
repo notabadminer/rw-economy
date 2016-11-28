@@ -102,14 +102,10 @@ public class EconomyListener implements Listener {
                 int itemID = testItem.getTypeID();
                 String itemAttribute = getItemAttribute(testItem.toString());
                 String itemName = testItem.getName();
-                try (ResultSet result = plugin.database.executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "' AND ItemAttribute='" + itemAttribute + "'")) {
-                    int itemPrice = result.getInt("ItemPrice");
-                    if (itemPrice > 0) {
-                        player.sendTextMessage("[#00FF00]" + itemName + ": " + itemPrice + " "  + LangSupport.getLocalTranslation("economy.label.coin", lang));
-                    } else {
-                        player.sendTextMessage("[#FF0000]" + itemName + " " + LangSupport.getLocalTranslation("economy.error.noprice", lang));
-                    }
-                } catch (SQLException e) {
+                int itemPrice = getItemPrice(itemID, itemVariation, itemAttribute);
+                if (itemPrice > 0) {
+                    player.sendTextMessage("[#00FF00]" + itemName + ": " + itemPrice + " "  + LangSupport.getLocalTranslation("economy.label.coin", lang));
+                } else {
                     player.sendTextMessage("[#FF0000]" + itemName + " " + LangSupport.getLocalTranslation("economy.error.noprice", lang));
                 }
             }
@@ -261,7 +257,7 @@ public class EconomyListener implements Listener {
         } catch (SQLException e) {
             if (itemVariation > 0) {
                 //try variation 0 if specific variation isn't priced
-                try (ResultSet result = plugin.database.executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation='" + itemVariation + "' AND ItemAttribute='" + itemAttribute + "'")) {
+                try (ResultSet result = plugin.database.executeQuery("SELECT ItemPrice FROM Pricelist WHERE ItemID='" + itemID + "' AND ItemVariation=0 AND ItemAttribute='" + itemAttribute + "'")) {
                     int itemPrice = result.getInt("ItemPrice");
                     return itemPrice;
                 } catch (SQLException ex) {
