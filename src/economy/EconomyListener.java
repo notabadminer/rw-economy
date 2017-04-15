@@ -50,7 +50,7 @@ public class EconomyListener implements Listener {
     }
 
     @EventMethod
-    public void onCommand(PlayerCommandEvent event) {
+    public void onPlayerCommand(PlayerCommandEvent event) {
         Player player = event.getPlayer();
         String command = event.getCommand();
         String playername = player.getName();

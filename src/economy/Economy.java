@@ -42,6 +42,8 @@ public class Economy extends Plugin {
             if (!result.next()) {
                 System.out.println("Pricelist table is empty. Initializing...");
                 fileutil.initializePriceData();
+            } else {
+                System.out.println("Pricelist table initialized");
             }
         } catch (SQLException e) {
             System.out.println("Error initializing Pricelist table");
