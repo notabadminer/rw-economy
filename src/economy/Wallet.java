@@ -44,7 +44,7 @@ public class Wallet implements IWallet {
                 return true;
             }
         } catch (SQLException e) {
-            return false;
+            createAccount(playername);
         }
         return false; 
     }
@@ -62,7 +62,7 @@ public class Wallet implements IWallet {
                 return true;
             }            
         } catch (SQLException e) {
-            return false;
+            createAccount(playername);
         }
         return false;      
     }
@@ -73,7 +73,12 @@ public class Wallet implements IWallet {
         try (ResultSet result = plugin.database.executeQuery("SELECT Balance FROM Economy WHERE PlayerName='" + playername + "'")) {
             return result.getLong("Balance");
         } catch (SQLException e) {
+            createAccount(playername);
             return 0;
         }
+    }
+    
+    private void createAccount(String playername) {
+        plugin.database.executeUpdate("REPLACE INTO `Economy` (`PlayerName`, `Balance`) VALUES ('" + playername + "',0)");
     }
 }

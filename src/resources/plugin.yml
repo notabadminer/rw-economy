@@ -1,6 +1,6 @@
 name: Economy
 main: economy.Economy
-version: 0.9
+version: 0.7-0.8.2.4
 author: notabadminer
 description: "Basic economy plugin for Rising World. Buy and Sell most items."
 license: GPL 3.0
